@@ -502,6 +502,29 @@ print(format_progress_with_eta(
 # Output: "15/100 (15%) - ETA: 2m 30s"
 ```
 
+For more advanced ETA calculations, use `TimingStats`:
+
+```python
+from treetask import TimingStats
+
+stats = TimingStats()
+stats.start()
+
+# Record task durations as they complete
+stats.record(1.5)  # Task took 1.5s
+stats.record(2.0)  # Task took 2.0s
+stats.record(1.8)
+
+# Get ETA using different methods
+eta_avg = stats.estimate_remaining(pending_count=10, method="average")
+eta_moving = stats.estimate_remaining(pending_count=10, method="moving_average")
+eta_median = stats.estimate_remaining(pending_count=10, method="median")
+
+# Get all stats
+all_stats = stats.get_stats()
+# {"count": 3, "average": 1.77, "median": 1.8, "min": 1.5, "max": 2.0, ...}
+```
+
 ### Hooks System
 
 Subscribe to execution events:
@@ -579,6 +602,34 @@ config = TreeTaskConfig(
     enable_logging=True,
     log_level="DEBUG",
 )
+```
+
+For quick debugging, use `create_logging_hooks`:
+
+```python
+import logging
+from treetask import create_logging_hooks, AsyncExecutor
+
+logger = logging.getLogger("debug")
+hooks = create_logging_hooks(logger)
+
+executor = AsyncExecutor(tree, hooks=hooks)
+```
+
+For structured log output with extra fields, use `StructuredFormatter`:
+
+```python
+from treetask import StructuredFormatter, configure_treetask_logging
+
+# Quick setup
+logger = configure_treetask_logging(level="DEBUG", structured=True)
+
+# Or manual setup
+handler = logging.StreamHandler()
+handler.setFormatter(StructuredFormatter("%(asctime)s %(levelname)s: %(message)s"))
+logging.getLogger("treetask").addHandler(handler)
+
+# Output: 2024-01-15 10:30:45 INFO: Node started [node_id=task1 node_name=Fetch depth=1]
 ```
 
 ### Dynamic Tree Structure
@@ -957,6 +1008,51 @@ class TreeTaskConfig:
     # Logging
     enable_logging: bool = False
     log_level: str = "INFO"
+```
+
+### TimingStats
+
+Track task durations for ETA estimation.
+
+```python
+stats = TimingStats()
+stats.start()                    # Mark execution start
+stats.record(duration)           # Record task duration
+
+# Properties
+stats.count                      # Number of recordings
+stats.total_duration             # Sum of all durations
+stats.elapsed                    # Time since start()
+stats.average                    # Average duration
+stats.moving_average             # Moving average (last 50)
+stats.median                     # Median duration
+stats.min_duration               # Minimum duration
+stats.max_duration               # Maximum duration
+
+# Methods
+stats.estimate_remaining(pending_count, method="moving_average")
+stats.get_stats()                # Get all stats as dict
+```
+
+### Logging Utilities
+
+```python
+# Quick logging setup
+from treetask import configure_treetask_logging, StructuredFormatter, create_logging_hooks
+
+# Configure treetask logging
+logger = configure_treetask_logging(
+    level="INFO",                # Log level
+    format_string=None,          # Custom format (optional)
+    structured=True,             # Include extra fields
+)
+
+# StructuredFormatter - includes extra fields in log output
+formatter = StructuredFormatter("%(asctime)s %(levelname)s: %(message)s")
+# Output: "2024-01-15 10:30:45 INFO: Node started [node_id=task1 depth=1]"
+
+# create_logging_hooks - quick debug logging
+hooks = create_logging_hooks(logger)  # Logs all events
 ```
 
 ## Requirements
