@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "treetask"
+version = "0.1.0"
+description = "Hierarchical parallel task execution with live tree progress display"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+keywords = ["async", "parallel", "tasks", "tree", "progress", "cli"]
+dependencies = [
+    "anyio>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/fusionboxhq/treetask"
+Repository = "https://github.com/fusionboxhq/treetask"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[tool.setuptools]
+packages = ["treetask"]
+package-dir = {"treetask" = "."}
