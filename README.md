@@ -1,5 +1,10 @@
 # TreeTask
 
+[![Tests](https://github.com/fusionboxhq/treetask/actions/workflows/tests.yml/badge.svg)](https://github.com/fusionboxhq/treetask/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/fusionboxhq/treetask/branch/main/graph/badge.svg)](https://codecov.io/gh/fusionboxhq/treetask)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A Python package for hierarchical parallel task execution with live tree progress display.
 
 ## Features

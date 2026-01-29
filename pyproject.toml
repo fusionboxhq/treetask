@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "treetask"
-version = "0.1.0"
+version = "0.2.0"
 description = "Hierarchical parallel task execution with live tree progress display"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
-keywords = ["async", "parallel", "tasks", "tree", "progress", "cli"]
+keywords = ["async", "parallel", "tasks", "tree", "progress", "cli", "dag", "retry", "timeout"]
 dependencies = [
     "anyio>=4.0.0",
 ]
@@ -21,9 +21,25 @@ Repository = "https://github.com/fusionboxhq/treetask"
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
+    "pytest-anyio>=0.0.0",
+    "pytest-cov>=4.0.0",
 ]
 
 [tool.setuptools]
 packages = ["treetask"]
 package-dir = {"treetask" = "."}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["treetask"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
