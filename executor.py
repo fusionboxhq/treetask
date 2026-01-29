@@ -134,6 +134,9 @@ class AsyncExecutor:
 
         # Skip if already completed (checkpoint resume)
         if self.skip_completed and node.id in self._completed_ids:
+            # Still need to execute children
+            if node.children:
+                await self._execute_children(node)
             return
 
         # Evaluate skip condition
@@ -186,11 +189,19 @@ class AsyncExecutor:
                 await self._execute_children(node)
 
             # Mark as done if not already failed/cancelled/timed_out
-            if node.status == "working":
+            if node.status in ("working", "retrying"):
                 node.status = "done"
                 node.end_time = time.time()
                 self._mark_completed(node)
                 self._notify_update()
+
+        except TimeoutError:
+            # Task-level timeout
+            node.status = "timed_out"
+            node.end_time = time.time()
+            self.hooks.emit("on_timeout", node)
+            self._notify_update()
+            raise
 
         except anyio.get_cancelled_exc_class():
             if self.context.is_cancelled:
