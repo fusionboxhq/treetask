@@ -179,6 +179,62 @@ class TestTaskHooksProtocol:
         hooks.on_error(node, ValueError("test"))
 
 
+class TestHookDispatcherEdgeCases:
+    """Test edge cases for HookDispatcher."""
+
+    def test_off_event_not_registered(self):
+        """Test off() when event doesn't exist returns self."""
+        hooks = HookDispatcher()
+
+        result = hooks.off("nonexistent_event")
+
+        assert result is hooks  # Should return self for chaining
+
+    def test_emit_protocol_handler_exception_is_caught(self):
+        """Test that exceptions in protocol handlers are caught and don't stop others."""
+        hooks = HookDispatcher()
+        results = []
+
+        class BrokenHandler:
+            def on_test(self):
+                raise ValueError("Handler error")
+
+        class WorkingHandler:
+            def on_test(self):
+                results.append("working")
+
+        hooks.register(BrokenHandler())
+        hooks.register(WorkingHandler())
+
+        # Should not raise, should continue to other handlers
+        hooks.emit("on_test")
+        assert results == ["working"]
+
+    def test_has_handlers_protocol_handler(self):
+        """Test has_handlers returns True when protocol handler has method."""
+        hooks = HookDispatcher()
+
+        class MyHandler:
+            def on_custom_event(self):
+                pass
+
+        hooks.register(MyHandler())
+
+        assert hooks.has_handlers("on_custom_event") is True
+        assert hooks.has_handlers("on_nonexistent") is False
+
+    def test_has_handlers_protocol_handler_non_callable(self):
+        """Test has_handlers returns False when attribute exists but is not callable."""
+        hooks = HookDispatcher()
+
+        class MyHandler:
+            on_attr = "not callable"
+
+        hooks.register(MyHandler())
+
+        assert hooks.has_handlers("on_attr") is False
+
+
 class TestCreateLoggingHooks:
     def test_creates_hook_dispatcher(self):
         class MockLogger:

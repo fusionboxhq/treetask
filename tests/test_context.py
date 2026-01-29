@@ -139,3 +139,48 @@ class TestExecutionContextAsync:
         # Third acquisition should block (we won't actually block in test)
         # Just verify the semaphore is being used
         assert context._semaphore is not None
+
+    async def test_release_slot_with_semaphore(self):
+        """Test that release_slot properly releases the semaphore."""
+        context = ExecutionContext(max_concurrency=2)
+        await context.initialize()
+
+        await context.acquire_slot()
+        await context.acquire_slot()
+        assert context.active_count == 2
+
+        # Release one slot
+        context.release_slot()
+        assert context.active_count == 1
+
+        # Should be able to acquire another now
+        await context.acquire_slot()
+        assert context.active_count == 2
+
+    async def test_cancel_with_cancel_scope(self):
+        """Test cancellation when cancel_scope is set."""
+        context = ExecutionContext()
+        await context.initialize()
+
+        # Create and set a cancel scope
+        async with anyio.create_task_group() as tg:
+            cancel_scope = tg.cancel_scope
+            context.set_cancel_scope(cancel_scope)
+
+            # Now cancel should also cancel the scope
+            context.cancel(reason="Testing cancel scope")
+
+            assert context.is_cancelled is True
+            # The scope should be marked for cancellation
+            assert cancel_scope.cancel_called is True
+
+    async def test_initialize_with_max_concurrency(self):
+        """Test that initialize creates semaphore when max_concurrency is set but semaphore is None."""
+        context = ExecutionContext(max_concurrency=3)
+        # Clear the semaphore to test re-initialization
+        context._semaphore = None
+
+        await context.initialize()
+
+        # Semaphore should be created during initialize
+        assert context._semaphore is not None

@@ -521,3 +521,41 @@ class TestTaskNodeAdditional:
         assert node.start_time is None
         assert node.end_time is None
         assert node.result is None
+
+    def test_walk(self):
+        """Test that node.walk() yields self and all descendants."""
+        root = TaskNode(id="root", name="Root")
+        child1 = TaskNode(id="child1", name="Child 1")
+        child2 = TaskNode(id="child2", name="Child 2")
+        grandchild = TaskNode(id="grandchild", name="Grandchild")
+
+        root.add_child(child1)
+        root.add_child(child2)
+        child1.add_child(grandchild)
+
+        walked = list(root.walk())
+        walked_ids = [n.id for n in walked]
+
+        assert len(walked) == 4
+        assert "root" in walked_ids
+        assert "child1" in walked_ids
+        assert "child2" in walked_ids
+        assert "grandchild" in walked_ids
+
+    def test_walk_from_child(self):
+        """Test walk() starting from a child node."""
+        root = TaskNode(id="root", name="Root")
+        child = TaskNode(id="child", name="Child")
+        grandchild = TaskNode(id="grandchild", name="Grandchild")
+
+        root.add_child(child)
+        child.add_child(grandchild)
+
+        # Walk from child should only get child and its descendants
+        walked = list(child.walk())
+        walked_ids = [n.id for n in walked]
+
+        assert len(walked) == 2
+        assert "child" in walked_ids
+        assert "grandchild" in walked_ids
+        assert "root" not in walked_ids

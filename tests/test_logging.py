@@ -363,3 +363,20 @@ class TestConfigureTreetaskLogging:
         configure_treetask_logging()
 
         assert len(logger.handlers) == 1
+
+
+class TestTreeTaskLoggerEdgeCases:
+    """Test edge cases for TreeTaskLogger."""
+
+    def test_logger_property_when_not_initialized(self):
+        """Test logger property creates logger if _logger is None."""
+        logger_obj = TreeTaskLogger(logger_name="test_lazy_init")
+
+        # Force _logger to None
+        logger_obj._logger = None
+
+        # Accessing .logger should recreate it
+        result = logger_obj.logger
+
+        assert result is not None
+        assert result.name == "test_lazy_init"

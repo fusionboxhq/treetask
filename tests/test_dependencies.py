@@ -203,3 +203,73 @@ class TestDependencyResolver:
         assert levels[0][0].id == "root"
         assert set(n.id for n in levels[1]) == {"task_a", "task_b"}
         assert levels[2][0].id == "task_c"
+
+    def test_get_ready_nodes_skips_completed(self):
+        """Test that get_ready_nodes skips already completed nodes."""
+        root = TaskNode(id="root", name="Root", status="done")
+        task_a = TaskNode(id="task_a", name="Task A", status="done")
+        task_b = TaskNode(id="task_b", name="Task B")
+        root.add_child(task_a)
+        root.add_child(task_b)
+        tree = TaskTree(root)
+
+        resolver = DependencyResolver(tree)
+
+        # task_a is already in completed, so it should be skipped
+        ready = resolver.get_ready_nodes({"root", "task_a"})
+        ready_ids = [n.id for n in ready]
+
+        assert "task_a" not in ready_ids
+        assert "task_b" in ready_ids
+
+    def test_get_ready_nodes_skips_working_status(self):
+        """Test that get_ready_nodes skips nodes with non-pending status."""
+        root = TaskNode(id="root", name="Root", status="done")
+        task_a = TaskNode(id="task_a", name="Task A", status="working")
+        task_b = TaskNode(id="task_b", name="Task B", status="pending")
+        root.add_child(task_a)
+        root.add_child(task_b)
+        tree = TaskTree(root)
+
+        resolver = DependencyResolver(tree)
+
+        # Only pending nodes should be returned
+        ready = resolver.get_ready_nodes({"root"})
+        ready_ids = [n.id for n in ready]
+
+        assert "task_a" not in ready_ids  # working status
+        assert "task_b" in ready_ids  # pending status
+
+    def test_get_execution_levels_with_cycle(self):
+        """Test that get_execution_levels handles cycles gracefully."""
+        root = TaskNode(id="root", name="Root")
+        task_a = TaskNode(id="task_a", name="Task A", depends_on=["task_b"])
+        task_b = TaskNode(id="task_b", name="Task B", depends_on=["task_a"])
+        root.add_child(task_a)
+        root.add_child(task_b)
+        tree = TaskTree(root)
+
+        resolver = DependencyResolver(tree)
+        levels = resolver.get_execution_levels()
+
+        # Should only contain root since task_a and task_b are in a cycle
+        assert len(levels) == 1
+        assert levels[0][0].id == "root"
+
+    def test_parent_dependency_added_to_reverse_graph(self):
+        """Test that parent dependencies are properly added to reverse_graph."""
+        root = TaskNode(id="root", name="Root")
+        child = TaskNode(id="child", name="Child")
+        grandchild = TaskNode(id="grandchild", name="Grandchild")
+        root.add_child(child)
+        child.add_child(grandchild)
+        tree = TaskTree(root)
+
+        resolver = DependencyResolver(tree)
+
+        # Child depends on root (implicit parent dep)
+        assert "root" in resolver.get_dependencies("child")
+        # Root has child as a dependent
+        assert "child" in resolver.get_dependents("root")
+        # Child has grandchild as a dependent
+        assert "grandchild" in resolver.get_dependents("child")

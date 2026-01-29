@@ -191,6 +191,70 @@ class TestTreeSerializer:
         assert c2.error == "Test error"
 
 
+    def test_save_to_file(self, tmp_path):
+        """Test saving a tree to a file."""
+        root = TaskNode(id="root", name="Root", status="done")
+        child = TaskNode(id="child", name="Child", status="done")
+        root.add_child(child)
+        tree = TaskTree(root)
+
+        filepath = tmp_path / "tree.json"
+        TreeSerializer.save_to_file(tree, str(filepath))
+
+        # Verify file was created and contains valid JSON
+        assert filepath.exists()
+        with open(filepath) as f:
+            data = json.load(f)
+        assert data["root"]["id"] == "root"
+        assert len(data["root"]["children"]) == 1
+
+    def test_load_from_file(self, tmp_path):
+        """Test loading a tree from a file."""
+        # Create a JSON file
+        json_data = {
+            "version": "1.0",
+            "root": {
+                "id": "root",
+                "name": "Root",
+                "status": "done",
+                "children": [
+                    {"id": "child", "name": "Child", "status": "done", "children": []}
+                ]
+            },
+            "config": {}
+        }
+        filepath = tmp_path / "tree.json"
+        with open(filepath, "w") as f:
+            json.dump(json_data, f)
+
+        # Load the tree
+        tree = TreeSerializer.load_from_file(str(filepath))
+
+        assert tree.root.id == "root"
+        assert tree.root.status == "done"
+        assert len(tree.root.children) == 1
+        assert tree.root.children[0].id == "child"
+
+    def test_save_and_load_roundtrip(self, tmp_path):
+        """Test that save and load work together."""
+        # Create original tree
+        root = TaskNode(id="root", name="Root", data={"key": "value"})
+        child = TaskNode(id="child", name="Child", status="done", result={"answer": 42})
+        root.add_child(child)
+        tree = TaskTree(root)
+
+        # Save
+        filepath = tmp_path / "roundtrip.json"
+        TreeSerializer.save_to_file(tree, str(filepath))
+
+        # Load
+        loaded = TreeSerializer.load_from_file(str(filepath))
+
+        assert loaded.root.id == "root"
+        assert loaded.root.data == {"key": "value"}
+        assert loaded.find("child").result == {"answer": 42}
+
+
 class TestCreateTaskRegistry:
     def test_creates_registry(self):
         async def task1(node):

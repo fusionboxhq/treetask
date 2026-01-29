@@ -71,8 +71,8 @@ class DependencyResolver:
             if node.parent is not None:
                 parent_id = node.parent.id
                 self._graph[node_id].add(parent_id)
-                if parent_id not in self._reverse_graph:
-                    self._reverse_graph[parent_id] = set()
+                if parent_id not in self._reverse_graph:  # pragma: no cover
+                    self._reverse_graph[parent_id] = set()  # Defensive - parents always visited first
                 self._reverse_graph[parent_id].add(node_id)
 
         self._built = True

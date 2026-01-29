@@ -207,8 +207,8 @@ def format_eta(
 
     # Calculate rate and ETA
     rate = current / elapsed  # items per second
-    if rate <= 0:
-        return "-"
+    if rate <= 0:  # pragma: no cover
+        return "-"  # Defensive - rate is always positive given guards above
 
     eta_seconds = remaining_count / rate
     return f"~{format_duration(eta_seconds)} remaining"

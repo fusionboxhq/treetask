@@ -193,3 +193,73 @@ class TestTreeRenderer:
 
         # Check tree structure characters are present
         assert "├" in output or "└" in output
+
+    def test_render_deep_tree_with_vertical_lines(self):
+        """Test rendering a deep tree where vertical lines are used for non-last children."""
+        root = TaskNode(id="root", name="Root")
+        child1 = TaskNode(id="child1", name="Child 1")
+        child1_a = TaskNode(id="child1_a", name="Child 1a")
+        child2 = TaskNode(id="child2", name="Child 2")
+        root.add_child(child1)
+        root.add_child(child2)
+        child1.add_child(child1_a)
+        tree = TaskTree(root)
+
+        renderer = TreeRenderer()
+        output = renderer.render(tree)
+
+        # Should contain vertical bar for non-last child continuation
+        assert "│" in output
+        assert "Child 1a" in output
+
+    def test_render_collapsed_at_root_level(self):
+        """Test collapsing children when max_depth=0."""
+        root = TaskNode(id="root", name="Root")
+        child1 = TaskNode(id="child1", name="Child 1")
+        child2 = TaskNode(id="child2", name="Child 2")
+        root.add_child(child1)
+        root.add_child(child2)
+        tree = TaskTree(root)
+
+        renderer = TreeRenderer()
+        output = renderer.render(tree, max_depth=0)
+
+        assert "Root" in output
+        # Should show collapsed indicator
+        assert "..." in output
+        assert "2 items" in output
+
+    def test_render_collapsed_nested_children(self):
+        """Test collapsing at depth 1 with nested children."""
+        root = TaskNode(id="root", name="Root")
+        child1 = TaskNode(id="child1", name="Child 1")
+        grandchild = TaskNode(id="grandchild", name="Grandchild")
+        child1.add_child(grandchild)
+        child2 = TaskNode(id="child2", name="Child 2")
+        root.add_child(child1)
+        root.add_child(child2)
+        tree = TaskTree(root)
+
+        renderer = TreeRenderer()
+        output = renderer.render(tree, max_depth=1)
+
+        assert "Root" in output
+        assert "Child 1" in output
+        assert "Child 2" in output
+        # Child 1's children should be collapsed
+        assert "..." in output
+
+    def test_render_stats_without_progress_nodes(self):
+        """Test render with show_stats when no nodes have progress."""
+        root = TaskNode(id="root", name="Root", status="done")
+        child1 = TaskNode(id="child1", name="Child 1", status="done")
+        child2 = TaskNode(id="child2", name="Child 2", status="pending")
+        root.add_child(child1)
+        root.add_child(child2)
+        tree = TaskTree(root)
+
+        renderer = TreeRenderer()
+        output = renderer.render(tree, show_stats=True)
+
+        # Should show leaf stats format
+        assert "Total:" in output
