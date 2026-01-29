@@ -35,7 +35,7 @@ asyncio_mode = "auto"
 
 [tool.coverage.run]
 source = ["treetask"]
-omit = ["tests/*"]
+omit = ["tests/*", "test_treetask.py"]
 
 [tool.coverage.report]
 exclude_lines = [
