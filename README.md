@@ -109,6 +109,24 @@ After completion:
 Progress: 4/4 (100%)
 ```
 
+### Headless Mode (No Output)
+
+For API services, background jobs, or CI environments where terminal output isn't needed:
+
+```python
+from treetask import TreeBuilder, AsyncExecutor
+
+tree = TreeBuilder("pipeline").add_node("task", task=my_task).build()
+
+# Simply omit the on_update callback - no display is created
+executor = AsyncExecutor(tree)
+await executor.run()
+
+# Access results programmatically
+results = tree.collect_results()
+stats = tree.get_stats()
+```
+
 ## Usage Guide
 
 ### Building Trees with TreeBuilder
