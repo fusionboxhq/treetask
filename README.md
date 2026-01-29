@@ -964,6 +964,10 @@ tree_dict = TreeSerializer.tree_to_dict(tree)
 tree = TreeSerializer.tree_from_json(json_str, task_registry=None)
 tree = TreeSerializer.tree_from_dict(data, task_registry=None)
 
+# File operations
+TreeSerializer.save_to_file(tree, "checkpoint.json")
+tree = TreeSerializer.load_from_file("checkpoint.json", task_registry=registry)
+
 # Node level
 node_dict = TreeSerializer.node_to_dict(node)
 node = TreeSerializer.dict_to_node(data, task_registry=None)
@@ -1017,6 +1021,7 @@ class TreeTaskConfig:
     default_max_depth: int = 2
     final_max_depth: int = 3
     refresh_interval: float = 0.1
+    show_eta: bool = True
     icons: dict[str, str]
     tree_chars: dict[str, str]
 
@@ -1031,6 +1036,41 @@ class TreeTaskConfig:
     # Logging
     enable_logging: bool = False
     log_level: str = "INFO"
+```
+
+### TreeRenderer
+
+Renders task trees as text.
+
+```python
+renderer = TreeRenderer(config)
+
+# Render tree
+output = renderer.render(tree, max_depth=3, show_stats=True)
+
+# Render single node
+node_str = renderer.render_node(node, prefix="", is_last=True)
+```
+
+### LiveDisplay
+
+Live updating terminal display.
+
+```python
+display = LiveDisplay(renderer=None, config=None, output=sys.stderr)
+
+# Update display (rate-limited)
+display.update(tree, max_depth=2, force=False)
+
+# Show final expanded tree
+display.finalize(tree, max_depth=3, show_stats=True)
+
+# Clear display
+display.clear()
+
+# Context manager (hides/shows cursor)
+with display:
+    await executor.run()
 ```
 
 ### TimingStats
