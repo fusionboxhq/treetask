@@ -265,3 +265,116 @@ class TestTreeBuilder:
         found = tree.find("child")
         assert found is not None
         assert found.name == "Child"
+
+    def test_add_sibling(self):
+        tree = (
+            TreeBuilder("root", name="Root")
+            .add_node("child1", name="Child 1")
+            .add_sibling("child2", name="Child 2")
+            .build()
+        )
+
+        assert len(tree.root.children) == 2
+        assert tree.root.children[1].name == "Child 2"
+
+    def test_add_sibling_at_root_raises(self):
+        builder = TreeBuilder("root", name="Root")
+        with pytest.raises(ValueError):
+            builder.add_sibling("sibling", name="Sibling")
+
+    def test_root_method(self):
+        builder = (
+            TreeBuilder("root", name="Root")
+            .add_node("child", name="Child")
+            .add_node("grandchild", name="Grandchild")
+        )
+
+        # Should be at grandchild level
+        assert builder.current.id == "grandchild"
+
+        # Go back to root
+        builder.root()
+        assert builder.current.id == "root"
+
+    def test_set_data(self):
+        tree = (
+            TreeBuilder("root", name="Root")
+            .set_data(key="value", num=42)
+            .build()
+        )
+
+        assert tree.root.data["key"] == "value"
+        assert tree.root.data["num"] == 42
+
+    def test_set_task(self):
+        tree = (
+            TreeBuilder("root", name="Root")
+            .set_task(dummy_task)
+            .build()
+        )
+
+        assert tree.root.task_fn is dummy_task
+
+    def test_set_progress(self):
+        tree = (
+            TreeBuilder("root", name="Root")
+            .set_progress(5, 10)
+            .build()
+        )
+
+        assert tree.root.progress == (5, 10)
+
+    def test_clear_dependencies(self):
+        tree = (
+            TreeBuilder("root", name="Root")
+            .add_node("task", name="Task")
+            .depends_on("other1", "other2")
+            .clear_dependencies()
+            .build()
+        )
+
+        assert tree.root.children[0].depends_on == []
+
+    def test_skip_if_alias(self):
+        condition = lambda n: True
+        tree = (
+            TreeBuilder("root", name="Root")
+            .add_node("task", name="Task")
+            .skip_if(condition)
+            .build()
+        )
+
+        assert tree.root.children[0].skip_condition is condition
+
+    def test_run_if_alias(self):
+        condition = lambda n: True
+        tree = (
+            TreeBuilder("root", name="Root")
+            .add_node("task", name="Task")
+            .run_if(condition)
+            .build()
+        )
+
+        assert tree.root.children[0].run_condition is condition
+
+    def test_with_last(self):
+        tree = (
+            TreeBuilder("root", name="Root")
+            .add_child("child", name="Child")
+            .with_last()  # Move to the child
+            .set_timeout(30.0)
+            .build()
+        )
+
+        assert tree.root.children[0].timeout == 30.0
+
+    def test_current_property(self):
+        builder = TreeBuilder("root", name="Root")
+        assert builder.current.id == "root"
+
+    def test_last_added_property(self):
+        builder = TreeBuilder("root", name="Root")
+        assert builder.last_added is None
+
+        builder.add_child("child", name="Child")
+        assert builder.last_added.id == "child"

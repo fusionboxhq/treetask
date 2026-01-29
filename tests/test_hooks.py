@@ -2,7 +2,7 @@
 
 import pytest
 from treetask.hooks import HookDispatcher, create_logging_hooks
-from treetask.core import TaskNode
+from treetask.core import TaskNode, TaskTree
 
 
 class TestHookDispatcher:
@@ -146,6 +146,37 @@ class TestHookDispatcher:
         # Should not raise, should continue to other handlers
         hooks.emit("on_test")
         assert results == [1, 3]
+
+
+class TestTaskHooksProtocol:
+    """Test the TaskHooks protocol default implementations."""
+
+    def test_protocol_methods_exist(self):
+        from treetask.hooks import TaskHooks
+
+        # Create a minimal implementation
+        class MinimalHooks(TaskHooks):
+            pass
+
+        hooks = MinimalHooks()
+
+        # All protocol methods should be callable (they're no-ops by default)
+        node = TaskNode(id="test", name="Test")
+        tree = TaskTree(node)
+
+        # These should not raise - they're default no-op implementations
+        hooks.on_tree_start(tree)
+        hooks.on_tree_complete(tree)
+        hooks.on_node_start(node)
+        hooks.on_node_complete(node)
+        hooks.on_retry(node, 1, ValueError("test"))
+        hooks.on_progress_update(node, 1, 10)
+        hooks.on_child_added(node, node)
+        hooks.on_timeout(node)
+        hooks.on_cancel(node, "reason")
+        hooks.on_skip(node, "reason")
+        hooks.on_dependency_ready(node)
+        hooks.on_error(node, ValueError("test"))
 
 
 class TestCreateLoggingHooks:

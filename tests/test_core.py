@@ -419,3 +419,105 @@ class TestTaskTree:
 
         s = str(tree)
         assert "root" in s or "Root" in s or "TaskTree" in s
+
+    def test_unregister_node(self):
+        root = TaskNode(id="root", name="Root")
+        child = TaskNode(id="child", name="Child")
+        root.add_child(child)
+        tree = TaskTree(root)
+
+        # Node should be findable
+        assert tree.find("child") is not None
+
+        # Unregister it
+        tree.unregister_node("child")
+
+        # Should not be findable by index anymore
+        assert tree.find("child") is None
+
+
+class TestTaskNodeAdditional:
+    def test_remove_child(self):
+        parent = TaskNode(id="parent", name="Parent")
+        child = TaskNode(id="child", name="Child")
+        parent.add_child(child)
+
+        assert len(parent.children) == 1
+
+        result = parent.remove_child(child)
+
+        assert result is True
+        assert len(parent.children) == 0
+        assert child.parent is None
+
+    def test_remove_child_not_found(self):
+        parent = TaskNode(id="parent", name="Parent")
+        other = TaskNode(id="other", name="Other")
+
+        result = parent.remove_child(other)
+
+        assert result is False
+
+    def test_is_done_true(self):
+        for status in ["done", "failed", "cancelled", "skipped", "timed_out"]:
+            node = TaskNode(id="test", name="Test", status=status)
+            assert node.is_done() is True
+
+    def test_is_done_false(self):
+        for status in ["pending", "working", "retrying"]:
+            node = TaskNode(id="test", name="Test", status=status)
+            assert node.is_done() is False
+
+    def test_is_successful(self):
+        node_done = TaskNode(id="test", name="Test", status="done")
+        node_failed = TaskNode(id="test", name="Test", status="failed")
+
+        assert node_done.is_successful() is True
+        assert node_failed.is_successful() is False
+
+    def test_get_root(self):
+        root = TaskNode(id="root", name="Root")
+        child = TaskNode(id="child", name="Child")
+        grandchild = TaskNode(id="grandchild", name="Grandchild")
+
+        root.add_child(child)
+        child.add_child(grandchild)
+
+        assert grandchild.get_root() is root
+        assert child.get_root() is root
+        assert root.get_root() is root
+
+    def test_find_child(self):
+        parent = TaskNode(id="parent", name="Parent")
+        child1 = TaskNode(id="child1", name="Child 1")
+        child2 = TaskNode(id="child2", name="Child 2")
+
+        parent.add_child(child1)
+        parent.add_child(child2)
+
+        found = parent.find_child("child1")
+        assert found is child1
+
+        not_found = parent.find_child("nonexistent")
+        assert not_found is None
+
+    def test_reset(self):
+        node = TaskNode(
+            id="test",
+            name="Test",
+            status="failed",
+            retry_count=3,
+            error="Some error",
+            start_time=100.0,
+            end_time=110.0,
+            result={"data": "value"},
+        )
+
+        node.reset()
+
+        assert node.status == "pending"
+        assert node.retry_count == 0
+        assert node.error is None
+        assert node.start_time is None
+        assert node.end_time is None
+        assert node.result is None
